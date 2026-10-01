@@ -1,0 +1,99 @@
+version: "3.9"
+
+# =============================================================================
+# NexaBank IdentityForge — Local Development Stack
+# =============================================================================
+# Services:
+#   keycloak      — Identity provider (3 realms: staff, agents, partners)
+#   postgres      — Keycloak + NexaBank application DB
+#   nexabank-api  — Node.js API (token validation, audit, mTLS)
+#   anomaly-agent — Python anomaly detection agent
+#   wazuh         — SIEM (stub — swap for real Wazuh docker-compose in production)
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexabank-postgres
+    environment:
+      POSTGRES_DB: nexabank
+      POSTGRES_USER: nexabank_app
+      POSTGRES_PASSWORD: change-me-in-production   # CHALLENGE: mentees replace with Secrets Manager
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexabank_app -d nexabank"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: nexabank-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/nexabank
+      KC_DB_USERNAME: nexabank_app
+      KC_DB_PASSWORD: change-me-in-production
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin-change-me
+    volumes:
+      - ./keycloak-config/realms:/opt/keycloak/data/import
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  nexabank-api:
+    build:
+      context: ./nexabank-api
+      dockerfile: Dockerfile
+    container_name: nexabank-api
+    env_file: ./nexabank-api/.env.example   # replace with .env in production
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: nexabank
+      DB_USER: nexabank_app
+      DB_PASSWORD: change-me-in-production
+    ports:
+      - "3000:3000"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - api-logs:/var/log/nexabank
+
+  anomaly-agent:
+    build:
+      context: ./detection
+      dockerfile: Dockerfile.anomaly
+    container_name: nexabank-anomaly-agent
+    environment:
+      VOLUME_THRESHOLD: "100"
+      WINDOW_MINUTES: "10"
+      REGION_WINDOW_MINUTES: "5"
+      ALLOWED_HOURS_START_UTC: "6"
+      ALLOWED_HOURS_END_UTC: "22"
+    volumes:
+      - api-logs:/var/log/nexabank:ro
+    command: ["python", "agents/anomaly-agent.py", "--log-file", "/var/log/nexabank/audit.log", "--mode", "stream"]
+    depends_on:
+      - nexabank-api
+
+volumes:
+  postgres-data:
+  api-logs:
