@@ -51,7 +51,7 @@ resource "aws_subnet" "public_primary" {
   vpc_id                  = aws_vpc.nexabank.id
   availability_zone       = local.az_primary
   cidr_block              = local.cidr_public_primary
-  map_public_ip_on_launch = true  # This is for bastion
+  map_public_ip_on_launch = true # This is for bastion
 
   tags = merge(local.common_tags, {
     Name = "${local.name}-public-az1"
@@ -63,7 +63,7 @@ resource "aws_subnet" "public_secondary" {
   vpc_id                  = aws_vpc.nexabank.id
   availability_zone       = local.az_secondary
   cidr_block              = local.cidr_public_secondary
-  map_public_ip_on_launch = false  # ALB nodes only
+  map_public_ip_on_launch = false # ALB nodes only
 
   tags = merge(local.common_tags, {
     Name = "${local.name}-public-az2"

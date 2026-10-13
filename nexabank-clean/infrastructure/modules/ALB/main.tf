@@ -11,7 +11,7 @@ locals {
 
 # ALB
 resource "aws_lb" "nexabank" {
-  name               = "${local.name}-alb"  
+  name               = "${local.name}-alb"
   load_balancer_type = "application"
   internal           = false
   security_groups    = [var.security_group_id]
