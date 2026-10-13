@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY agents/anomaly-agent.py ./agents/anomaly-agent.py
+
+RUN pip install --no-cache-dir requests python-dotenv
+
+RUN addgroup --system nexabank && adduser --system --group nexabank
+USER nexabank
+
+CMD ["python", "agents/anomaly-agent.py", "--mode", "batch"]
