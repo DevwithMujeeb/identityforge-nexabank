@@ -16,9 +16,6 @@ enable_s3_gateway_endpoint = true
 
 # Security
 
-# Admin access to the bastion
-admin_cidr_blocks = ["203.0.113.0/28"] # We need to replace with admin Ip
-
 # Public application traffic
 alb_ingress_cidrs = ["0.0.0.0/0"]
 
@@ -33,7 +30,7 @@ db_port       = 5432
 ssh_port      = 22
 
 #  ALB
-certificate_arn = "arn:aws:acm:af-south-1:<account-id>:certificate/<id>" #replace with real cert ARN
+certificate_arn = null #replace with real cert ARN
 
 ssl_policy = "ELBSecurityPolicy-TLS13-1-2-2021-06"
 

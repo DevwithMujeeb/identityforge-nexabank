@@ -122,19 +122,6 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   description       = "HTTP from users for redirect to HTTPS"
 }
 
-# Edge (admins to bastion (SSH only))
-
-resource "aws_vpc_security_group_ingress_rule" "bastion_ssh" {
-  for_each = toset(var.admin_cidr_blocks)
-
-  security_group_id = aws_security_group.bastion.id
-  cidr_ipv4         = each.value
-  ip_protocol       = "tcp"
-  from_port         = var.ssh_port
-  to_port           = var.ssh_port
-  description       = "SSH from admin"
-}
-
 # Internal SG-to-SG flows
 resource "aws_vpc_security_group_egress_rule" "flow" {
   for_each = local.flows

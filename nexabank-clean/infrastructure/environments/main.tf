@@ -28,8 +28,6 @@ module "security" {
   # Networking dependency
   vpc_id = module.networking.vpc_id
 
-  # Admin access
-  admin_cidr_blocks = var.admin_cidr_blocks
 
   # Public ALB access
   alb_ingress_cidrs = var.alb_ingress_cidrs
@@ -155,13 +153,14 @@ module "bastion" {
   name = "${local.name}-bastion"
   tags = var.tags
 
-  subnet_ids                  = [module.networking.public_subnet_id_primary]
+  subnet_ids                  = [module.networking.private_subnet_id_primary]
   security_group_ids          = [module.security.bastion_sg_id]
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   instance_type          = var.bastion_instance_type
   ebs_kms_key_arn        = module.kms.ebs_key_arn
   termination_protection = local.is_prod
+  enable_ssm             = true
 }
 
 module "keycloak" {

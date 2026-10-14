@@ -13,21 +13,6 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "admin_cidr_blocks" {
-  description = "Admin source CIDRs allowed to SSH to the bastion (e.g. [\"203.0.113.10/32\"]). Must not be 0.0.0.0/0."
-  type        = list(string)
-
-  validation {
-    condition     = length(var.admin_cidr_blocks) > 0 && alltrue([for c in var.admin_cidr_blocks : can(cidrhost(c, 0))])
-    error_message = "admin_cidr_blocks must contain at least one valid IPv4 CIDR."
-  }
-
-  validation {
-    condition     = !contains(var.admin_cidr_blocks, "0.0.0.0/0")
-    error_message = "admin_cidr_blocks must not open the bastion to the whole internet (0.0.0.0/0)."
-  }
-}
-
 variable "alb_ingress_cidrs" {
   description = "Source CIDRs allowed to reach the ALB (user traffic)"
   type        = list(string)

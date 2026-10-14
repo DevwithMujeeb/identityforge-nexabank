@@ -47,26 +47,6 @@ variable "enable_s3_gateway_endpoint" {
 
 # SECURITY
 
-variable "admin_cidr_blocks" {
-  description = "CIDRs allowed to SSH to the bastion"
-  type        = list(string)
-
-  validation {
-    condition = (
-      length(var.admin_cidr_blocks) > 0 &&
-      alltrue([
-        for c in var.admin_cidr_blocks : can(cidrhost(c, 0))
-      ])
-    )
-    error_message = "admin_cidr_blocks must contain at least one valid CIDR."
-  }
-
-  validation {
-    condition     = !contains(var.admin_cidr_blocks, "0.0.0.0/0")
-    error_message = "admin_cidr_blocks must not contain 0.0.0.0/0."
-  }
-}
-
 variable "alb_ingress_cidrs" {
   description = "CIDRs allowed to reach the public ALB"
   type        = list(string)
