@@ -251,6 +251,6 @@ terraform {
     key            = "prod/infrastructure.tfstate"
     region         = "af-south-1"
     encrypt        = true
-    dynamodb_table = "nexabank-terraform-locks"
+    use_lockfile = true
   }
 }
