@@ -243,3 +243,14 @@ module "storage" {
   s3_kms_key_arn         = module.kms.s3_key_arn
   create_alb_logs_bucket = true
 }
+
+# Remote S3 Backend Configuration
+terraform {
+    backend "s3" {
+    bucket         = "nexabank-terraform-state-files"
+    key            = "prod/infrastructure.tfstate"
+    region         = "af-south-1"
+    encrypt        = true
+    dynamodb_table = "nexabank-terraform-locks"
+  }
+}

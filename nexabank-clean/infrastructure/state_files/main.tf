@@ -1,0 +1,54 @@
+provider "aws" {
+  region = "af-south-1"
+  default_tags {
+    tags = {
+      Environment   = "Prod"
+      Project       = "NexaBank"
+      Managed_By    = "Terraform"
+      Resource_type = "State_file"
+    }
+  }
+}
+
+# S3 Bucket for Terraform State
+resource "aws_s3_bucket" "terraform_state" {
+  bucket        = "nexabank-terraform-state-files" # Note: Hyphens used instead of underscores
+  force_destroy = false
+}
+
+resource "aws_s3_bucket_versioning" "state_versioning" {
+  bucket = aws_s3_bucket.terraform_state.id # Fixed reference to match resource label
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "state_encryption" {
+  bucket = aws_s3_bucket.terraform_state.id # Fixed reference to match resource label
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "state_public_access" {
+  bucket                  = aws_s3_bucket.terraform_state.id # Fixed reference to match resource label
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# DynamoDB Table for State Locking
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "nexabank-terraform-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
