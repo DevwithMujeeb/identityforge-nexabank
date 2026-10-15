@@ -105,4 +105,5 @@ Each file contains `TODO (mentee challenge)` comments. Key ones:
 
 ## Technology stack
 
-Keycloak 23 · PostgreSQL 15 · Node.js 20 · Python 3.11 · Smallstep CA · APISIX / Kong · Wazuh · Terraform · GitHub Actions
+Keycloak 23 · PostgreSQL 15 · Node.js 20 · Python 3.11 · Smallstep CA · APISIX / Kong · Wazuh · Terraform · GitHub Actions 
+.
