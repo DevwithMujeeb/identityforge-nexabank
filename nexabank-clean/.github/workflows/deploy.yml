@@ -1,0 +1,31 @@
+name: Secure OIDC Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write   
+  contents: read    
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::506715794903:role/nexabank-github-actions-role 
+          aws-region: af-south-1
+
+      - name: Verify AWS STS Identity
+        run: aws sts get-caller-identity
+
+      - name: Run Terraform Deployment
+        run: |
+          cd nexabank-clean/infrastructure/environments
+          terraform init -reconfigure
+          terraform apply -auto-approve -var="gateway_image_tag=${{ github.sha }}"
