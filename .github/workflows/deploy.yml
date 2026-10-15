@@ -1,0 +1,58 @@
+name: Secure OIDC Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate-and-plan:
+    name: Build, Push and Terraform Plan
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: af-south-1
+      ECR_REGISTRY: 506715794903.dkr.ecr.af-south-1.amazonaws.com
+      ECR_REPOSITORY: nexabank-prod-gateway
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::506715794903:role/nexabank-github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build API Image
+        run: |
+          docker build \
+            --pull \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            ./nexabank-clean/nexabank-api
+
+      - name: Push API Image to ECR
+        run: |
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Set Up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init and Plan
+        working-directory: nexabank-clean/infrastructure/environments
+        run: |
+          terraform init -reconfigure
+          terraform plan \
+            -var="gateway_image_tag=${IMAGE_TAG}" \
+            -out=tfplan
